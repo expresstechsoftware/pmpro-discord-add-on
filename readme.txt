@@ -1,4 +1,4 @@
-=== Connect Paid Memberships Pro to Discord ===
+=== ExpressTechSoftwares Discord Add-on for Paid Memberships Pro ===
 Contributors: expresstechsoftware, webbdeveloper, sunnysoni, strangerstudios 
 Tags: Discord, Talk, Video Chat, Hang Out, Friends, Memberships, discord role management
 Donate link: https://paypal.me/supportets
@@ -7,14 +7,14 @@ Author: ExpressTech Software Solutions Pvt. Ltd.
 Requires at least: 4.7
 Tested up to: 6.4
 Requires PHP: 7.0
-Stable tag: 1.2.13
+Stable tag: 1.2.14
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-This add-on enables connecting your PMPRO enabled website to your discord server. Now you can add/remove PMPRO members directly to your discord server roles, assign roles according to your member levels, unassign roles when they expire, change role when they change membership.
+This add-on enables connecting your PMPro enabled website to your discord server. Now you can add/remove PMPro members directly to your discord server roles, assign roles according to your member levels, unassign roles when they expire, change role when they change membership.
  
 == Description ==
-= THE MOST TRUSTED WAY TO ADD DISCORD COMMUNITY TO A PMPro MEMBERSHIP SITE ON WORDPRESS. =
+= THE EASY WAY TO ADD DISCORD COMMUNITY TO A PMPro MEMBERSHIP SITE ON WORDPRESS. =
 
 Paid Memberships Pro Discord Add is a complete solution to secure your discord community content and create a seamless membership discord community experience on WordPress.
 
@@ -22,7 +22,7 @@ With over 18 features to share protected content to discord community server, ad
 
 <strong>BUILT FOR YOUR PRIVATE DISCORD COMMUNITY OF WORDPRESS MEMBERSHIP SITE</strong>
 
-PMPro discord community addon supports any kind of member community-focused business or organization. With over 6 years of experience working with creators like you, this plugin delivers on what you need today and in the future. Select a use case to learn more about how we specialize in supporting your unique business:
+PMPro discord community addon supports any kind of member community-focused business or organization. With over 8 years of experience working with creators like you, this plugin delivers on what you need today and in the future. Select a use case to learn more about how we specialize in supporting your unique business:
 
 [Manual](https://www.expresstechsoftwares.com/step-by-step-documentation-guide-on-how-to-connect-pmpro-and-discord-server-using-discord-addon/) | [Support](https://wordpress.org/support/plugin/pmpro-discord-add-on/) | [Demo](https://www.youtube.com/watch?v=v7lxB_Bvlv4) | [Premium Features](https://www.expresstechsoftwares.com/pro-version-addon-for-pmpro-discord/)
 

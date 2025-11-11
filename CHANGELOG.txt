@@ -1,3 +1,6 @@
+= 1.2.14 =
+- Plugin name change as per request from wp.org directory
+
 = 1.2.13 =
 - Update WordPress version 6.4
 
