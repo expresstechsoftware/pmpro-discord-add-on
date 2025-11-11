@@ -3,7 +3,7 @@
  * Plugin Name: ExpressTechSoftwares Discord Add-on for Paid Memberships Pro
  * Plugin URI:  https://www.expresstechsoftwares.com/step-by-step-documentation-guide-on-how-to-connect-pmpro-and-discord-server-using-discord-addon
  * Description: Connect your PaidMebershipPro site to your discord server, enable your members to be part of your community.
- * Version: 1.2.14
+ * Version: 2.0.0
  * Author: ExpressTech Software Solutions Pvt. Ltd., Strangers Studios
  * Author URI: https://www.expresstechsoftwares.com
  * Text Domain: pmpro-discord-add-on
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // create plugin version constant.
-define( 'ETS_PMPRO_VERSION', '1.2.14' );
+define( 'ETS_PMPRO_VERSION', '2.0.0' );
 
 // create plugin url constant.
 define( 'ETS_PMPRO_DISCORD_URL', plugin_dir_url( __FILE__ ) );
@@ -114,6 +114,9 @@ class Ets_Pmpro_Add_Discord {
 		update_option( 'ets_pmpro_discord_cancel_message', 'Hi [MEMBER_USERNAME], ([MEMBER_EMAIL]), Your membership [MEMBERSHIP_LEVEL] at [BLOG_NAME] is cancelled, Regards, [SITE_URL]' );
 		update_option( 'ets_pmpro_discord_embed_messaging_feature', false );
 		update_option( 'ets_pmpro_discord_data_erases', false );
+		update_option( 'ets_pmpro_discord_role_assigned_text', 'The following Roles have been assigned to you in Discord:' );
+		update_option( 'ets_pmpro_discord_role_will_assign_text', 'The following Roles will be assigned to you in Discord:' );
+
 	}
 
 }

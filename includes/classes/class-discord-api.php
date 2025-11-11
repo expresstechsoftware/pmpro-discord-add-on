@@ -35,7 +35,7 @@ class PMPro_Discord_API {
 
 		add_action( 'wp_ajax_ets_pmpro_discord_member_table_run_api', array( $this, 'ets_pmpro_discord_member_table_run_api' ) );
 
-		add_action( 'pmpro_stripe_subscription_deleted', array( $this, 'ets_pmpro_discord_stripe_subscription_deleted' ), 10, 1 );
+		// add_action( 'pmpro_stripe_subscription_deleted', array( $this, 'ets_pmpro_discord_stripe_subscription_deleted' ), 10, 1 );
 
 		add_action( 'pmpro_subscription_payment_failed', array( $this, 'ets_pmpro_discord_subscription_payment_failed' ), 10, 1 );
 
@@ -46,6 +46,8 @@ class PMPro_Discord_API {
 		add_action( 'ets_pmrpo_discord_schedule_expiration_warnings', array( $this, 'ets_pmpro_discord_send_expiration_warning_DM' ) );
 
 		add_action( 'pmpro_after_checkout', array( $this, 'ets_pmpro_adjust_discord_roles' ), 10, 2 );
+
+		add_action( 'pmpro_subscription_payment_completed', array( $this, 'ets_pmpro_subscription_payment_completed' ), 10, 1 );
 
 	}
 
@@ -300,8 +302,8 @@ class PMPro_Discord_API {
 		// stop users who having the direct URL of discord Oauth.
 		// We must check IF NONE members is set to NO and user having no active membership.
 		$allow_none_member = sanitize_text_field( trim( get_option( 'ets_pmpro_allow_none_member' ) ) );
-		$curr_level_id     = sanitize_text_field( trim( ets_pmpro_discord_get_current_level_id( $user_id ) ) );
-		if ( $curr_level_id == null && $allow_none_member == 'no' ) {
+		$curr_level_ids     = ets_pmpro_discord_get_current_level_ids( $user_id );
+		if ( $curr_level_ids == null && $allow_none_member == 'no' ) {
 			return;
 		}
 		$response          = '';
@@ -396,8 +398,8 @@ class PMPro_Discord_API {
 	 * @return NONE
 	 */
 	private function add_discord_member_in_guild( $_ets_pmpro_discord_user_id, $user_id, $access_token ) {
-		$curr_level_id = sanitize_text_field( trim( ets_pmpro_discord_get_current_level_id( $user_id ) ) );
-		if ( $curr_level_id !== null ) {
+		$curr_level_ids = ets_pmpro_discord_get_current_level_ids( $user_id );
+		if ( $curr_level_ids !== null ) {
 			// It is possible that we may exhaust API rate limit while adding members to guild, so handling off the job to queue.
 			as_schedule_single_action( ets_pmpro_discord_get_random_timestamp( ets_pmpro_discord_get_highest_last_attempt_timestamp() ), 'ets_pmpro_discord_as_handle_add_member_to_guild', array( $_ets_pmpro_discord_user_id, $user_id, $access_token ), ETS_DISCORD_AS_GROUP_NAME );
 		}
@@ -421,14 +423,17 @@ class PMPro_Discord_API {
 		$discord_bot_token                 = sanitize_text_field( trim( get_option( 'ets_pmpro_discord_bot_token' ) ) );
 		$default_role                      = sanitize_text_field( trim( get_option( '_ets_pmpro_discord_default_role_id' ) ) );
 		$ets_pmpor_discord_role_mapping    = json_decode( get_option( 'ets_pmpor_discord_role_mapping' ), true );
-		$discord_role                      = '';
-		$curr_level_id                     = sanitize_text_field( trim( ets_pmpro_discord_get_current_level_id( $user_id ) ) );
+		$discord_roles                     = array();
+		$curr_level_ids                    = ets_pmpro_discord_get_current_level_ids( $user_id );
 		$ets_pmpro_discord_send_welcome_dm = sanitize_text_field( trim( get_option( 'ets_pmpro_discord_send_welcome_dm' ) ) );
 
-		if ( is_array( $ets_pmpor_discord_role_mapping ) && array_key_exists( 'pmpro_level_id_' . $curr_level_id, $ets_pmpor_discord_role_mapping ) ) {
-			$discord_role = sanitize_text_field( trim( $ets_pmpor_discord_role_mapping[ 'pmpro_level_id_' . $curr_level_id ] ) );
-		} elseif ( $discord_role = '' && $default_role ) {
-			$discord_role = $default_role;
+		if ( is_array( $curr_level_ids ) ) {
+
+			foreach ( $curr_level_ids as $curr_level_id ) {
+				if ( is_array( $ets_pmpor_discord_role_mapping ) && array_key_exists( 'pmpro_level_id_' . $curr_level_id, $ets_pmpor_discord_role_mapping ) ) {
+					$discord_roles[] = sanitize_text_field( trim( $ets_pmpor_discord_role_mapping[ 'pmpro_level_id_' . $curr_level_id ] ) );
+				}
+			}
 		}
 
 		$guilds_memeber_api_url = ETS_DISCORD_API_URL . 'guilds/' . $guild_id . '/members/' . $_ets_pmpro_discord_user_id;
@@ -441,13 +446,12 @@ class PMPro_Discord_API {
 			'body'    => json_encode(
 				array(
 					'access_token' => $access_token,
-					'roles'        => array(
-						$discord_role,
-					),
 				)
 			),
 		);
 		$guild_response         = wp_remote_post( $guilds_memeber_api_url, $guild_args );
+
+		$response_arr = json_decode( wp_remote_retrieve_body( $guild_response ), true );
 
 		ets_pmpro_discord_log_api_response( $user_id, $guilds_memeber_api_url, $guild_args, $guild_response );
 		if ( ets_pmpro_discord_check_api_errors( $guild_response ) ) {
@@ -458,10 +462,15 @@ class PMPro_Discord_API {
 			throw new Exception( 'Failed in function ets_as_handler_add_member_to_guild' );
 		}
 
-		update_user_meta( $user_id, '_ets_pmpro_discord_role_id', $discord_role );
-		if ( $discord_role && $discord_role != 'none' && isset( $user_id ) ) {
-			$this->put_discord_role_api( $user_id, $discord_role );
+		$discord_role_ids = array();
+		foreach ( $discord_roles as $discord_role ) {
+
+			if ( $discord_role && $discord_role != 'none' && isset( $user_id ) ) {
+				$discord_role_ids[] = $discord_role;
+				$this->put_discord_role_api( $user_id, $discord_role );
+			}
 		}
+		update_user_meta( $user_id, '_ets_pmpro_discord_role_ids', $discord_role_ids );
 
 		if ( $default_role && $default_role != 'none' && isset( $user_id ) ) {
 			$this->put_discord_role_api( $user_id, $default_role );
@@ -613,15 +622,18 @@ class PMPro_Discord_API {
 					$res_body = json_decode( wp_remote_retrieve_body( $response ), true );
 					if ( is_array( $res_body ) ) {
 						if ( array_key_exists( 'access_token', $res_body ) ) {
-							$access_token       = sanitize_text_field( trim( $res_body['access_token'] ) );
-							$user_body          = $this->get_discord_current_user( $access_token );
-							$discord_user_email = $user_body['email'];
+							$access_token = sanitize_text_field( trim( $res_body['access_token'] ) );
+							$user_body    = $this->get_discord_current_user( $access_token );
+							$temporary_email = $user_body['id'] . '@placeholder.email';
+							$discord_user_email = ( ! empty( $user_body['email'] ) ) ? $user_body['email'] : $temporary_email;
+
 							$password           = wp_generate_password( 12, true, false );
 							if ( email_exists( $discord_user_email ) ) {
 								$current_user = get_user_by( 'email', $discord_user_email );
 								$user_id      = $current_user->ID;
 							} else {
 								$user_id = wp_create_user( $discord_user_email, $password, $discord_user_email );
+								add_user_meta( $user_id, 'email_needs_update', true );
 								wp_new_user_notification( $user_id, null, $password );
 							}
 							$this->catch_discord_auth_callback( $res_body, $user_id );
@@ -632,7 +644,13 @@ class PMPro_Discord_API {
 							wp_set_auth_cookie( $user_id, false, '', '' );
 							wp_signon( $credentials, '' );
 							$discord_user_id = sanitize_text_field( trim( get_user_meta( $user_id, '_ets_pmpro_discord_user_id', true ) ) );
-							$this->add_discord_member_in_guild( $discord_user_id, $user_id, $access_token );
+
+							//Do not call add member to guild if the member is connected via discord, check for usermeta.
+							$last_joined_date = trim( get_user_meta( $user_id, '_ets_pmpro_discord_join_date', true) );
+
+							if(!$last_joined_date){
+								$this->add_discord_member_in_guild( $discord_user_id, $user_id, $access_token );
+							}
 							if ( $_COOKIE['ets_discord_page'] ) {
 								wp_safe_redirect( urldecode_deep( $_COOKIE['ets_discord_page'] ) );
 								exit();
@@ -653,10 +671,12 @@ class PMPro_Discord_API {
 		$discord_exist_user_id = sanitize_text_field( trim( get_user_meta( $user_id, '_ets_pmpro_discord_user_id', true ) ) );
 		$access_token          = sanitize_text_field( trim( $res_body['access_token'] ) );
 		update_user_meta( $user_id, '_ets_pmpro_discord_access_token', $access_token );
+
 		if ( array_key_exists( 'refresh_token', $res_body ) ) {
 			$refresh_token = sanitize_text_field( trim( $res_body['refresh_token'] ) );
 			update_user_meta( $user_id, '_ets_pmpro_discord_refresh_token', $refresh_token );
 		}
+
 		if ( array_key_exists( 'expires_in', $res_body ) ) {
 			$expires_in = $res_body['expires_in'];
 			$date       = new DateTime();
@@ -664,6 +684,7 @@ class PMPro_Discord_API {
 			$token_expiry_time = $date->getTimestamp();
 			update_user_meta( $user_id, '_ets_pmpro_discord_expires_in', $token_expiry_time );
 		}
+
 		$user_body = $this->get_discord_current_user( $access_token );
 
 		if ( is_array( $user_body ) && array_key_exists( 'discriminator', $user_body ) ) {
@@ -672,18 +693,41 @@ class PMPro_Discord_API {
 			$discord_user_name_with_number = $discord_user_name . '#' . $discord_user_number;
 			update_user_meta( $user_id, '_ets_pmpro_discord_username', $discord_user_name_with_number );
 		}
+
 		if ( is_array( $user_body ) && array_key_exists( 'id', $user_body ) ) {
 			$_ets_pmpro_discord_user_id = sanitize_text_field( trim( $user_body['id'] ) );
-			if ( $discord_exist_user_id == $_ets_pmpro_discord_user_id ) {
+
+			if ( $discord_exist_user_id == $_ets_pmpro_discord_user_id ) {				
 				$_ets_pmpro_discord_role_id = sanitize_text_field( trim( get_user_meta( $user_id, '_ets_pmpro_discord_role_id', true ) ) );
-				if ( ! empty( $_ets_pmpro_discord_role_id ) && $_ets_pmpro_discord_role_id != 'none' ) {
+				
+				// Get the expected role based on the current membership level
+				$expected_role_id = $this->get_expected_discord_role( $user_id );
+
+				// Only delete and reassign if the current role doesn't match the expected role
+				if ( !empty($_ets_pmpro_discord_role_id) && $_ets_pmpro_discord_role_id != 'none' && $_ets_pmpro_discord_role_id != $expected_role_id ) {
 					$this->delete_discord_role( $user_id, $_ets_pmpro_discord_role_id );
 				}
 			}
+
+			// Update the user meta with the Discord user ID
 			update_user_meta( $user_id, '_ets_pmpro_discord_user_id', $_ets_pmpro_discord_user_id );
 		}
-
 	}
+
+	/*
+	* Function to get the expected Discord role based on the user's current membership level
+	*/
+	private function get_expected_discord_role( $user_id ) {
+		$current_membership_level_id = pmpro_getMembershipLevelForUser( $user_id )->ID;
+		$role_mapping = json_decode( get_option( 'ets_pmpor_discord_role_mapping' ), true );
+		
+		if ( isset( $role_mapping['pmpro_level_id_' . $current_membership_level_id] ) ) {
+			return sanitize_text_field( $role_mapping['pmpro_level_id_' . $current_membership_level_id] );
+		}
+		return 'none';
+	}
+
+
 
 	/**
 	 * Schedule delete existing user from guild
@@ -742,6 +786,7 @@ class PMPro_Discord_API {
 		delete_user_meta( $user_id, '_ets_pmpro_discord_default_role_id' );
 		delete_user_meta( $user_id, '_ets_pmpro_discord_username' );
 		delete_user_meta( $user_id, '_ets_pmpro_discord_expires_in' );
+		delete_user_meta( $user_id, '_ets_pmpro_discord_join_date' );
 
 	}
 
@@ -877,18 +922,20 @@ class PMPro_Discord_API {
 			}
 			delete_user_meta( $user_id, '_ets_pmpro_discord_refresh_token' );
 			// GH#279
-			$default_role                   = sanitize_text_field( trim( get_option( '_ets_pmpro_discord_default_role_id' ) ) );
-			$_ets_pmpro_discord_role_id     = sanitize_text_field( trim( get_user_meta( $user_id, '_ets_pmpro_discord_role_id', true ) ) );
-			$ets_pmpor_discord_role_mapping = json_decode( get_option( 'ets_pmpor_discord_role_mapping' ), true );
-			$curr_level_id                  = sanitize_text_field( trim( ets_pmpro_discord_get_current_level_id( $user_id ) ) );
-			$previous_default_role          = get_user_meta( $user_id, '_ets_pmpro_discord_default_role_id', true );
-			$access_token                   = get_user_meta( $user_id, '_ets_pmpro_discord_access_token', true );
+			$default_role = sanitize_text_field( trim( get_option( '_ets_pmpro_discord_default_role_id' ) ) );
+			$discord_role_ids = get_user_meta( $user_id, '_ets_pmpro_discord_role_ids', true );
+
+			$previous_default_role = get_user_meta( $user_id, '_ets_pmpro_discord_default_role_id', true );
+			$access_token          = get_user_meta( $user_id, '_ets_pmpro_discord_access_token', true );
 			if ( ! empty( $access_token ) ) {
-				// delete already assigned role.
-				if ( isset( $_ets_pmpro_discord_role_id ) && $_ets_pmpro_discord_role_id != '' && $_ets_pmpro_discord_role_id != 'none' ) {
-					$this->delete_discord_role( $user_id, $_ets_pmpro_discord_role_id, true );
-					delete_user_meta( $user_id, '_ets_pmpro_discord_role_id', true );
+
+				if ( $discord_role_ids && is_array( $discord_role_ids ) ) {
+					foreach ( $discord_role_ids as $discord_role_id ) {
+						$this->delete_discord_role( $user_id, $discord_role_id, true );
+					}
+					delete_user_meta( $user_id, '_ets_pmpro_discord_role_ids' );
 				}
+
 				// Assign role which is saved as default.
 				if ( $default_role != 'none' ) {
 					if ( isset( $previous_default_role ) && $previous_default_role != '' && $previous_default_role != 'none' ) {
@@ -971,34 +1018,80 @@ class PMPro_Discord_API {
 		$allow_none_member                            = sanitize_text_field( trim( get_option( 'ets_pmpro_allow_none_member' ) ) );
 		$default_role                                 = sanitize_text_field( trim( get_option( '_ets_pmpro_discord_default_role_id' ) ) );
 		$_ets_pmpro_discord_role_id                   = sanitize_text_field( trim( get_user_meta( $user_id, '_ets_pmpro_discord_role_id', true ) ) );
+		$discord_role_ids                             = get_user_meta( $user_id, '_ets_pmpro_discord_role_ids', true );
 		$ets_pmpor_discord_role_mapping               = json_decode( get_option( 'ets_pmpor_discord_role_mapping' ), true );
-		$curr_level_id                                = sanitize_text_field( trim( ets_pmpro_discord_get_current_level_id( $user_id ) ) );
+		$curr_level_ids                               = ets_pmpro_discord_get_current_level_ids( $user_id );
 		$previous_default_role                        = get_user_meta( $user_id, '_ets_pmpro_discord_default_role_id', true );
 		$ets_pmpro_discord_send_membership_expired_dm = sanitize_text_field( trim( get_option( 'ets_pmpro_discord_send_membership_expired_dm' ) ) );
 		$ets_pmpro_discord_send_membership_cancel_dm  = sanitize_text_field( trim( get_option( 'ets_pmpro_discord_send_membership_cancel_dm' ) ) );
 		$access_token                                 = get_user_meta( $user_id, '_ets_pmpro_discord_access_token', true );
 		if ( ! empty( $access_token ) ) {
+
+			// Remove role mapped to the expired level
 			if ( $expired_level_id ) {
-				$curr_level_id = $expired_level_id;
-			}
-			if ( $cancel_level_id ) {
-				$curr_level_id = $cancel_level_id;
-			}
-			// delete already assigned role.
-			if ( isset( $_ets_pmpro_discord_role_id ) && $_ets_pmpro_discord_role_id != '' && $_ets_pmpro_discord_role_id != 'none' ) {
-					$this->delete_discord_role( $user_id, $_ets_pmpro_discord_role_id, $is_schedule );
-					delete_user_meta( $user_id, '_ets_pmpro_discord_role_id', true );
-			}
-			if ( $curr_level_id !== null ) {
-				// Assign role which is mapped to the mmebership level.
-				if ( is_array( $ets_pmpor_discord_role_mapping ) && array_key_exists( 'pmpro_level_id_' . $curr_level_id, $ets_pmpor_discord_role_mapping ) ) {
-					$mapped_role_id = sanitize_text_field( trim( $ets_pmpor_discord_role_mapping[ 'pmpro_level_id_' . $curr_level_id ] ) );
-					if ( $mapped_role_id && $expired_level_id == false && $cancel_level_id == false ) {
-						$this->put_discord_role_api( $user_id, $mapped_role_id, $is_schedule );
-						update_user_meta( $user_id, '_ets_pmpro_discord_role_id', $mapped_role_id );
+				error_log( 'Expired level id : ' . $expired_level_id );
+				if ( is_array( $ets_pmpor_discord_role_mapping ) && array_key_exists( 'pmpro_level_id_' . $expired_level_id, $ets_pmpor_discord_role_mapping ) ) {
+					$mapped_role_id = sanitize_text_field( trim( $ets_pmpor_discord_role_mapping[ 'pmpro_level_id_' . $expired_level_id ] ) );
+					if ( $mapped_role_id ) {
+						$this->delete_discord_role( $user_id, $mapped_role_id, $is_schedule );
+						ets_remove_discord_role_from_user_meta( $user_id, $mapped_role_id );
 					}
 				}
+				// Send DM about expiry, but only when allow_none_member setting is yes
+				if ( $ets_pmpro_discord_send_membership_expired_dm == true && $expired_level_id !== false && $allow_none_member == 'yes' ) {
+					as_schedule_single_action( ets_pmpro_discord_get_random_timestamp( ets_pmpro_discord_get_highest_last_attempt_timestamp() ), 'ets_pmpro_discord_as_send_dm', array( $user_id, $expired_level_id, 'expired' ), 'ets-pmpro-discord' );
+				}
+				// exit
+				return;
+
 			}
+			// Remove role mapped to the cancelled level
+			if ( $cancel_level_id ) {
+				error_log( 'Canceld level id : ' . $cancel_level_id );
+				if ( is_array( $ets_pmpor_discord_role_mapping ) && array_key_exists( 'pmpro_level_id_' . $cancel_level_id, $ets_pmpor_discord_role_mapping ) ) {
+					$mapped_role_id = sanitize_text_field( trim( $ets_pmpor_discord_role_mapping[ 'pmpro_level_id_' . $cancel_level_id ] ) );
+					if ( $mapped_role_id ) {
+						$this->delete_discord_role( $user_id, $mapped_role_id, $is_schedule );
+						ets_remove_discord_role_from_user_meta( $user_id, $mapped_role_id );
+					}
+				}
+				// Send DM about cancel, but only when allow_none_member setting is yes
+				if ( $ets_pmpro_discord_send_membership_cancel_dm == true && $cancel_level_id !== false && $allow_none_member == 'yes' ) {
+					as_schedule_single_action( ets_pmpro_discord_get_random_timestamp( ets_pmpro_discord_get_highest_last_attempt_timestamp() ), 'ets_pmpro_discord_as_send_dm', array( $user_id, $cancel_level_id, 'cancel' ), 'ets-pmpro-discord' );
+				}
+				// exit
+				return;
+			}
+
+			// delete already assigned role.
+			if ( isset( $_ets_pmpro_discord_role_id ) && $_ets_pmpro_discord_role_id != '' && $_ets_pmpro_discord_role_id != 'none' ) {
+				$this->delete_discord_role( $user_id, $_ets_pmpro_discord_role_id, $is_schedule );
+				delete_user_meta( $user_id, '_ets_pmpro_discord_role_id', true );
+			}
+			if ( $discord_role_ids && is_array( $discord_role_ids ) && ! empty( $discord_role_ids ) ) {
+				foreach ( $discord_role_ids as $discord_role_id ) {
+					$this->delete_discord_role( $user_id, $discord_role_id, $is_schedule );
+				}
+				delete_user_meta( $user_id, '_ets_pmpro_discord_role_ids' );
+			}
+
+			if ( $curr_level_ids !== null ) {
+				error_log( 'User id : ' . $user_id . ' Curr_level_ids : ' . print_r( $curr_level_ids, true ) );
+				$discord_role_ids = array();
+				foreach ( $curr_level_ids as $curr_level_id ) {
+					// Assign role which is mapped to the mmebership level.
+					if ( is_array( $ets_pmpor_discord_role_mapping ) && array_key_exists( 'pmpro_level_id_' . $curr_level_id, $ets_pmpor_discord_role_mapping ) ) {
+						$mapped_role_id = sanitize_text_field( trim( $ets_pmpor_discord_role_mapping[ 'pmpro_level_id_' . $curr_level_id ] ) );
+						if ( $mapped_role_id && $expired_level_id == false && $cancel_level_id == false ) {
+							$discord_role_ids[] = $mapped_role_id;
+							$this->put_discord_role_api( $user_id, $mapped_role_id, $is_schedule );
+							// update_user_meta( $user_id, '_ets_pmpro_discord_role_id', $mapped_role_id );
+						}
+					}
+				}
+				update_user_meta( $user_id, '_ets_pmpro_discord_role_ids', $discord_role_ids );
+			}
+
 			// Assign role which is saved as default.
 			if ( $default_role != 'none' ) {
 				if ( isset( $previous_default_role ) && $previous_default_role != '' && $previous_default_role != 'none' ) {
@@ -1014,25 +1107,27 @@ class PMPro_Discord_API {
 				update_user_meta( $user_id, '_ets_pmpro_discord_default_role_id', $default_role );
 			}
 
-			if ( isset( $user_id ) && $allow_none_member == 'no' && $curr_level_id == null ) {
+			if ( isset( $user_id ) && $allow_none_member == 'no' && $curr_level_ids == null ) {
 				$this->delete_member_from_guild( $user_id, false );
 			}
 
 			delete_user_meta( $user_id, '_ets_pmpro_discord_expitration_warning_dm_for_' . $curr_level_id );
 
 			// Send DM about expiry, but only when allow_none_member setting is yes
-			if ( $ets_pmpro_discord_send_membership_expired_dm == true && $expired_level_id !== false && $allow_none_member = 'yes' ) {
+			if ( $ets_pmpro_discord_send_membership_expired_dm == true && $expired_level_id !== false && $allow_none_member == 'yes' ) {
 				as_schedule_single_action( ets_pmpro_discord_get_random_timestamp( ets_pmpro_discord_get_highest_last_attempt_timestamp() ), 'ets_pmpro_discord_as_send_dm', array( $user_id, $expired_level_id, 'expired' ), 'ets-pmpro-discord' );
 			}
 
 			// Send DM about cancel, but only when allow_none_member setting is yes
-			if ( $ets_pmpro_discord_send_membership_cancel_dm == true && $cancel_level_id !== false && $allow_none_member = 'yes' ) {
+			if ( $ets_pmpro_discord_send_membership_cancel_dm == true && $cancel_level_id !== false && $allow_none_member == 'yes' ) {
 				as_schedule_single_action( ets_pmpro_discord_get_random_timestamp( ets_pmpro_discord_get_highest_last_attempt_timestamp() ), 'ets_pmpro_discord_as_send_dm', array( $user_id, $cancel_level_id, 'cancel' ), 'ets-pmpro-discord' );
 			}
 		}
 	}
 	/**
 	 * Manage user roles on cancel payment
+	 *
+	 * This function is marked for removal
 	 *
 	 * @param INT $user_id
 	 */
@@ -1054,6 +1149,16 @@ class PMPro_Discord_API {
 		if ( $ets_payment_fld == true && isset( $user_id ) ) {
 			$this->ets_pmpro_discord_set_member_roles( $user_id, false, false, true );
 		}
+	}
+
+	/**
+	 * Manage user roles on subscription  payment complete
+	 *
+	 * @param ARRAY $morder
+	 */
+	public function ets_pmpro_subscription_payment_completed( $morder ) {
+		$user_id         = $morder->user_id;
+		$this->ets_pmpro_discord_set_member_roles( $user_id, false, false, true );
 	}
 
 	/*
@@ -1086,7 +1191,7 @@ class PMPro_Discord_API {
 	 * @return NONE
 	 */
 	public function ets_pmpro_discord_change_discord_role_from_pmpro( $level_id, $user_id, $cancel_level ) {
-    $is_schedule = true;
+		$is_schedule = true;
 		$is_schedule = apply_filters( 'ets_pmpro_discord_schedule_change_renew_api_calls', $is_schedule );
 		$this->ets_pmpro_discord_set_member_roles( $user_id, false, false, $is_schedule );
 	}

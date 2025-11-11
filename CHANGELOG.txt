@@ -1,5 +1,35 @@
-= 1.2.14 =
+= 2.0.0 =
 - Plugin name change as per request from wp.org directory
+
+= 1.2.22 =
+- Fixed issue with exceeding tag limit in plugin's metadata to comply with WordPress.org requirements.
+
+= 1.2.21 =
+- Implemented Single Sign-On (SSO) feature with Discord - allowing users to authenticate via the "Connect with Discord" button without needing to manually create an account if one already exists
+- Added logic to check if a member has already been added to the Discord guild to prevent duplicate additions - optimizing role management and avoiding unnecessary API calls
+
+= 1.2.20 =
+- Added handling for cases where Discord user email does not exist, ensuring a temporary email is used.
+- Implemented the [discord_user_info] shortcode to display the current user's WordPress account name, Discord username, and roles, styled to match Discord's role display format.
+
+= 1.2.19 =
+- Added editable text fields for the messages "Following Roles was assigned to you in Discord:" and "Following Roles will be assigned to you in Discord:" in the Appearance settings.
+- Made the role assignment messages customizable via the plugin settings.
+
+= 1.2.18 =
+- Update readme file
+
+= 1.2.17 =
+- Updated plugin to support WordPress version 6.5
+
+= 1.2.16 =
+- Deprecated the pmpro_stripe_subscription_deleted hook in Paid Memberships Pro. Consequently, the function ets_pmpro_discord_stripe_subscription_deleted, acting as its callback, has been marked for removal. 
+
+= 1.2.15 =
+- Update Pro link
+
+= 1.2.14 =
+- Update plugin title
 
 = 1.2.13 =
 - Update WordPress version 6.4
