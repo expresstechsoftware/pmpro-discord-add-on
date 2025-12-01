@@ -1,20 +1,20 @@
-=== Unlock Exclusive Discord Access: Introducing the Free PMPro-Discord Addon — Elevate Your Community Engagement! ===
-Contributors: expresstechsoftware, webbdeveloper, sunnysoni, strangerstudios, vanbom
-Tags: discord, communities, membership, pmpro, WordPress.
+=== ExpressTechSoftwares Discord Add-on for Paid Memberships Pro ===
+Contributors: expresstechsoftware, webbdeveloper, sunnysoni, strangerstudios 
+Tags: Discord, Talk, Video Chat, Hang Out, Friends, Memberships, discord role management
 Donate link: https://paypal.me/supportets
 Author URI: https://www.expresstechsoftwares.com
 Author: ExpressTech Software Solutions Pvt. Ltd.
 Requires at least: 4.7
-Tested up to: 6.5
+Tested up to: 6.4
 Requires PHP: 7.0
 Stable tag: 2.0.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-This add-on enables connecting your PMPRO enabled website to your discord server. Now you can add/remove PMPRO members directly to your discord server roles, assign roles according to your member levels, unassign roles when they expire, change role when they change membership.
+This add-on enables connecting your PMPro enabled website to your discord server. Now you can add/remove PMPro members directly to your discord server roles, assign roles according to your member levels, unassign roles when they expire, change role when they change membership.
  
 == Description ==
-= THE MOST TRUSTED WAY TO ADD DISCORD COMMUNITY TO A PMPro MEMBERSHIP SITE ON WORDPRESS. =
+= THE EASY WAY TO ADD DISCORD COMMUNITY TO A PMPro MEMBERSHIP SITE ON WORDPRESS. =
 
 Paid Memberships Pro Discord Add is a complete solution to secure your discord community content and create a seamless membership discord community experience on WordPress.
 
@@ -22,7 +22,7 @@ With over 18 features to share protected content to discord community server, ad
 
 <strong>BUILT FOR YOUR PRIVATE DISCORD COMMUNITY OF WORDPRESS MEMBERSHIP SITE</strong>
 
-PMPro discord community addon supports any kind of member community-focused business or organization. With over 6 years of experience working with creators like you, this plugin delivers on what you need today and in the future. Select a use case to learn more about how we specialize in supporting your unique business:
+PMPro discord community addon supports any kind of member community-focused business or organization. With over 8 years of experience working with creators like you, this plugin delivers on what you need today and in the future. Select a use case to learn more about how we specialize in supporting your unique business:
 
 [Manual](https://www.expresstechsoftwares.com/step-by-step-documentation-guide-on-how-to-connect-pmpro-and-discord-server-using-discord-addon/) | [Support](https://wordpress.org/support/plugin/pmpro-discord-add-on/) | [Demo](https://www.youtube.com/watch?v=v7lxB_Bvlv4) | [Premium Features](https://www.expresstechsoftwares.com/pro-version-addon-for-pmpro-discord/)
 
@@ -86,7 +86,7 @@ This category includes features that allow for customization of the plugin and i
 * [Access free support here on](https://wordpress.org/support/plugin/pmpro-discord-add-on/)
 * [Steps Connecting Discord Addon](https://www.expresstechsoftwares.com/step-by-step-documentation-guide-on-how-to-connect-pmpro-and-discord-server-using-discord-addon/).
 
-[Pro Version Addon Features for PMPro-Discord](https://www.expresstechsoftwares.com/pro-version-addon-for-pmpro-discord/)
+[Pro Version Addon Features for PMPro-Discord](https://www.expresstechsoftwares.com/checkout/?add-to-cart=19749&quantity=1&utm_source=ets_wporg-discord&utm_medium=ets_wporg_link&utm_campaign=ets_wporg_discord-pro&utm_content=buy_now)
 
 * <strong>A. Enhanced Role Management
 Multiple Membership Discord Roles:</strong> The Pro version of the PMPro-Discord Addon takes role management to the next level. It allows for the assignment of multiple Discord roles based on different membership levels. This feature is especially useful for communities that offer a range of membership tiers, each with its unique benefits and access levels. By assigning multiple roles, community managers can create a more dynamic and tiered community structure, providing members with access to exclusive channels and content based on their specific subscription tier.
@@ -95,10 +95,15 @@ Email Support:</strong> Subscribers of the Pro version gain access to dedicated 
 * <strong>C. Custom Integration Services
 Free Consultation for Custom Discord API Integrations:</strong> A standout feature of the Pro version is the offer of a free consultation for developing custom Discord API integrations. This service is invaluable for community managers looking to customize their Discord experience to fit unique community needs. Whether it's developing specialized bots, automating specific community functions, or integrating with other software, the Pro version opens up a world of possibilities for bespoke community solutions. This feature not only adds tremendous value to the addon but also demonstrates a commitment to accommodating the specific needs of diverse communities.
 
-== <strong> Installation</strong> ==
+== <strong> installation</strong> ==
 
 = Download, Install and Activate! =
 
+1. Go to Plugins > Add New to find and install PMPRO discord Addon.
+2. Or, download the latest version of the plugin, then go to Plugins > Add New and click the "Upload Plugin" button to upload your .zip file.
+3. Activate the plugin.
+
+= Download, Install and Activate! =
 1. Go to Plugins > Add New to find and install PMPRO discord Addon.
 2. Or, download the latest version of the plugin, then go to Plugins > Add New and click the "Upload Plugin" button to upload your .zip file.
 3. Activate the plugin.

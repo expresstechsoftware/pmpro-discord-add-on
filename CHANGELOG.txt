@@ -1,3 +1,6 @@
+= 2.0.0 =
+- Plugin name change as per request from wp.org directory
+
 = 1.2.22 =
 - Fixed issue with exceeding tag limit in plugin's metadata to comply with WordPress.org requirements.
 
