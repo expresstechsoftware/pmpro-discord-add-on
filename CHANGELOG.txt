@@ -1,3 +1,6 @@
+= 2.0.1 =
+- Fixed fatal error GH#22
+
 = 2.0.0 =
 - Plugin name change as per request from wp.org directory
 
