@@ -61,6 +61,8 @@ class Ets_Pmpro_Admin_Setting {
 		add_filter( 'manage_users_custom_column', array( $this, 'ets_pmpro_discord_discord_connected_account' ), 99, 3 );
 
 		add_action( 'wp_ajax_ets_pmpro_discord_notice_dismiss', array( $this, 'ets_pmpro_discord_notice_dismiss' ) );
+
+		add_action( 'pmpro_memberslist_before_table', array( $this, 'ets_pmpro_discord_schedule_api_button' ),10 );
 	}
 	/**
 	 * set action scheuduler concurrent batches number
@@ -1074,6 +1076,18 @@ class Ets_Pmpro_Admin_Setting {
 		return wp_send_json( $event_res );
 
 		exit();
+	}
+
+	public function ets_pmpro_discord_schedule_api_button($value='')
+	{
+
+		?>
+
+        <a href="#" class="ets-schedule-run-api page-title-action pmpro-has-icon">
+            <?php esc_html_e( 'Schedule Discord API', 'pmpro-discord-add-on' ); ?>
+            <span class="spinner"></span>
+        </a>
+	    <?php
 	}
 
 }

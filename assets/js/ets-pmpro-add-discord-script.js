@@ -254,6 +254,33 @@ jQuery(document).ready(function ($) {
 			makeDrag($('.makeMeDraggable'));
 			newClone.css({ 'width': '100%', 'left': '0', 'top': '0', 'margin-bottom': '0px', 'position':'unset', 'order': '1' });
 		}
+
+		/*Call-back to manage member connection with discord from pmpro members-list*/
+		$(".ets-schedule-run-api").on("click", function (e) {
+	        e.preventDefault();
+			const $btn = $(this);               // clicked button
+    		const $spinner = $btn.find(".spinner");
+
+			$.ajax({
+				type: "POST",
+				dataType: "JSON",
+				url: etsPmproParams.admin_ajax,
+				data: { 'action': 'ets_pmpro_discord_members_schedule_run_api', 'ets_discord_nonce': etsPmproParams.ets_discord_nonce, },
+				beforeSend: function () {
+					$spinner.addClass("is-active").show();
+				},
+				success: function (response) {
+					if (response.status == 1) {
+						$(".ets-save-success").show();
+					}
+				},
+				error: function (response) {
+					console.error(response);
+				},
+				complete: function () {
+            		$spinner.removeClass("is-active").hide();				}
+			});
+		});
 	}
 
 	/*Call-back on disconnect from discord*/

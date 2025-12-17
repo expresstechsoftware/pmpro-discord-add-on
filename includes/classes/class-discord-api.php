@@ -49,6 +49,8 @@ class PMPro_Discord_API {
 
 		add_action( 'pmpro_subscription_payment_completed', array( $this, 'ets_pmpro_subscription_payment_completed' ), 10, 1 );
 
+		add_action( 'wp_ajax_ets_pmpro_discord_members_schedule_run_api', array( $this, 'ets_pmpro_discord_members_schedule_run_api' ) );
+
 	}
 
 	/**
@@ -1212,6 +1214,75 @@ class PMPro_Discord_API {
 		if ( $access_token && isset( $_COOKIE['ets_discord_page'] ) ) {
 			$this->ets_pmpro_discord_set_member_roles( $user_id );
 		}
+	}
+
+	/**
+	 * Manage user roles api calls
+	 *
+	 * @param NONE
+	 * @return OBJECT JSON response
+	 */
+	public function ets_pmpro_discord_members_schedule_run_api() {
+		if ( ! is_user_logged_in() && current_user_can( 'edit_user' ) ) {
+			wp_send_json_error( 'Unauthorized user', 401 );
+			exit();
+		}
+
+		// Check for nonce security
+		if ( ! wp_verify_nonce( $_POST['ets_discord_nonce'], 'ets-discord-ajax-nonce' ) ) {
+				wp_send_json_error( 'You do not have sufficient rights', 403 );
+				exit();
+		}
+		global $wpdb;
+
+		// Dynamic table names
+		$users_table        = $wpdb->users;
+		$usermeta_table     = $wpdb->usermeta;
+		$memberships_table  = $wpdb->prefix . 'pmpro_memberships_users';
+
+		$query = $wpdb->prepare("
+		    SELECT 
+		        u.ID,
+		        u.user_login,
+		        u.user_email,
+		        mu.membership_id,
+		        mu.startdate,
+		        mu.enddate,
+		        token_meta.meta_value AS discord_access_token,
+		        username_meta.meta_value AS discord_username
+		    FROM {$users_table} u
+		    INNER JOIN {$memberships_table} mu 
+		            ON mu.user_id = u.ID 
+		           AND mu.status = 'active'
+		           
+		    INNER JOIN {$usermeta_table} token_meta
+		            ON token_meta.user_id = u.ID
+		           AND token_meta.meta_key = '_ets_pmpro_discord_access_token'
+		           AND token_meta.meta_value <> ''
+		    INNER JOIN {$usermeta_table} username_meta
+		            ON username_meta.user_id = u.ID
+		           AND username_meta.meta_key = '_ets_pmpro_discord_username'
+		           AND username_meta.meta_value <> ''
+		", []);
+		//AND (mu.enddate IS NULL OR mu.enddate >= NOW())
+		// Get results
+		$results = $wpdb->get_results($query);
+		// Loop results
+		if ( ! empty($results) ) {
+		    foreach ($results as $row) {
+		    	$user_id = $row->ID;
+		    	// $row->discord_access_token;
+		    	// $row->discord_username
+		    	$this->ets_pmpro_discord_set_member_roles( $user_id, false, false, true );
+		       
+		    }
+		}
+
+		$event_res = array(
+			'status'  => 1,
+			'message' => __( 'success', 'pmpro-discord-add-on' ),
+		);
+		return wp_send_json( $event_res );
 	}
 }
 new PMPro_Discord_API();
